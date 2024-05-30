@@ -326,7 +326,7 @@ def build_random_instance_from_dt(dt,cAttr=None):
         dt = dtChild
     assert dt.is_leaf()
     listAttr = []
-    cMaxAttr = max([ixAttr for ixAttr,_ in listPath])
+    cMaxAttr = max(ixAttr for ixAttr,_ in listPath)
     dictPath = dict(listPath)
     if cAttr is None:
         cAttr = cMaxAttr + random.randint(1,5)
@@ -473,7 +473,7 @@ class CrossValidationTest(unittest.TestCase):
         dblScore = dtree.cv_score(iterableFolds)
         dblL = label_weight(listRight, fMajL)
         dblR = label_weight(listLeft, fMajR)
-        dblTotalWeight = sum([inst.dblWeight for inst in listRight + listLeft])
+        dblTotalWeight = sum(inst.dblWeight for inst in listRight + listLeft)
         self.assertAlmostEqual((dblL + dblR)/dblTotalWeight, dblScore)
 
     @repeated
@@ -580,7 +580,7 @@ class BoostTest(unittest.TestCase):
         cInst = 100
         listInst = build_random_weight(cInst)
         def weight_sum():
-            return sum([inst.dblWeight for inst in listInst], 0.0)
+            return sum(inst.dblWeight for inst in listInst)
         self.assertTrue(weight_sum() > 1.0)
         dtree.normalize_weights(listInst)
         self.assertAlmostEqual(1.0, weight_sum())
