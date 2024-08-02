@@ -6,6 +6,7 @@ import math
 import unittest
 
 import dtree  
+import secrets
 
 def repeated(fn):
     @functools.wraps(fn)
@@ -17,7 +18,7 @@ def repeated(fn):
     return wrapper
 
 def randbool(dblP=0.5):
-    return random.random() < dblP
+    return secrets.SystemRandom().random() < dblP
 
 def randlist(lo,hi,n):
     return map(lambda x: x(lo,hi), [random.randint]*n)
@@ -74,8 +75,8 @@ def build_consistent_generator(*args, **kwargs):
     return wrapper
 
 def build_jagged_instances():
-    return [dtree.Instance([0]*random.randint(5,10))
-            for _ in xrange(random.randint(25,30))]
+    return [dtree.Instance([0]*secrets.SystemRandom().randint(5,10))
+            for _ in xrange(secrets.SystemRandom().randint(25,30))]
 
 class EntropyTest(unittest.TestCase):
     REPEAT = 100
@@ -83,7 +84,7 @@ class EntropyTest(unittest.TestCase):
 
     @repeated
     def test_compute_entropy(self):
-        dblK = 1000000.0*random.random()
+        dblK = 1000000.0*secrets.SystemRandom().random()
         self.assertAlmostEqual(1.0, dtree.compute_entropy(dblK,dblK))
         self.assertAlmostEqual(0.0, dtree.compute_entropy(0.0, dblK))
         self.assertAlmostEqual(0.0, dtree.compute_entropy(dblK, 0.0))
@@ -102,8 +103,8 @@ class EntropyTest(unittest.TestCase):
                     
     @repeated
     def test_compute_entropy_of_split(self):
-        cAttrs = random.randint(2,20)
-        cValues = random.randint(1,30)
+        cAttrs = secrets.SystemRandom().randint(2,20)
+        cValues = secrets.SystemRandom().randint(1,30)
         fxnGenOne = lambda _: build_entropy_one_instances(cAttrs, cValues)
         fxnGenOne.cAttrs = cAttrs
         fxnGenOne.cValues = cValues
@@ -129,7 +130,7 @@ class EntropyTest(unittest.TestCase):
     @repeated
     def test_choose_split_attribute(self):
         cAttrs = 4
-        ixBest = random.randint(0,cAttrs-1)
+        ixBest = secrets.SystemRandom().randint(0,cAttrs-1)
         def generate_label(listAttrs):
             return bool(listAttrs[ixBest] % 2)
         fxnGen = build_instance_generator(cAttrs=cAttrs,
@@ -157,8 +158,8 @@ class EntropyTest(unittest.TestCase):
     def test_majority_label(self):
         fxnGenTrue = build_instance_generator(1.0)
         fxnGenFalse = build_instance_generator(0.0)
-        cLenTrue = random.randint(5,10)
-        cLenFalse = random.randint(5,10)
+        cLenTrue = secrets.SystemRandom().randint(5,10)
+        cLenFalse = secrets.SystemRandom().randint(5,10)
         if cLenTrue == cLenFalse:
             cLenTrue += 1
         listInst = fxnGenTrue(cLenTrue) + fxnGenFalse(cLenFalse)
@@ -169,18 +170,18 @@ class EntropyTest(unittest.TestCase):
     def test_majority_label_weighted(self):
         dblScale = 25.0
         def gen_insts_for_label(fLabel):
-            dblW = random.random() * dblScale
+            dblW = secrets.SystemRandom().random() * dblScale
             listInst = []
             dblInstWeight = 0.0
             while dblInstWeight < dblW:
-                dblNextWeight = random.random()
+                dblNextWeight = secrets.SystemRandom().random()
                 listInst.append(dtree.Instance([],fLabel,dblNextWeight))
                 dblInstWeight += dblNextWeight
             return listInst,dblInstWeight
         listInstT,dblT = gen_insts_for_label(True)
         listInstF,dblF = gen_insts_for_label(False)
         listInstAll = listInstT + listInstF
-        random.shuffle(listInstAll)
+        secrets.SystemRandom().shuffle(listInstAll)
         fMajorityLabel = dtree.majority_label(listInstAll)
         self.assertEqual(dblT > dblF, fMajorityLabel)        
 
@@ -210,7 +211,7 @@ class ConstructionTest(unittest.TestCase):
     @repeated
     def test_build_tree_rec_leaf(self):
         fLabel = randbool()
-        listInst = [dtree.Instance([],fLabel)]*random.randint(1,3)
+        listInst = [dtree.Instance([],fLabel)]*secrets.SystemRandom().randint(1,3)
         dt = dtree.build_tree_rec([],listInst,0.0,-1)
         self.assert_dt_members(dt)
         self.assertTrue(dt.is_leaf(), "dt was not a leaf")
@@ -221,7 +222,7 @@ class ConstructionTest(unittest.TestCase):
         pairBounds = (5,10)
         build_list_inst_bool = (lambda f:
             [dtree.Instance([int(f),randbool()],fLabel=f)
-             for _ in xrange(random.randint(*pairBounds))])
+             for _ in xrange(secrets.SystemRandom().randint(*pairBounds))])
         listInst = build_list_inst_bool(True) + build_list_inst_bool(False)
         setIxAttr = set(range(2))
         cPrevSetIxAttrLen = len(setIxAttr)
@@ -241,7 +242,7 @@ class ConstructionTest(unittest.TestCase):
     def test_build_tree_depth_limit(self):
         fxnGen = build_consistent_generator(10)
         listInst = fxnGen(100)
-        cMaxLevel = random.randint(0,3)
+        cMaxLevel = secrets.SystemRandom().randint(0,3)
         dt = dtree.build_tree(listInst, cMaxLevel=cMaxLevel)
         self.assert_dt_members(dt)
         self.check_dt(dt,cMaxLevel)
@@ -249,9 +250,9 @@ class ConstructionTest(unittest.TestCase):
     @repeated
     def test_build_tree_gain_limit(self):
         listInst = []
-        cAttr = random.randint(5,10)
-        ixAttrImportant = random.randint(0,cAttr-1)
-        for _ in xrange(random.randint(25,150)):
+        cAttr = secrets.SystemRandom().randint(5,10)
+        ixAttrImportant = secrets.SystemRandom().randint(0,cAttr-1)
+        for _ in xrange(secrets.SystemRandom().randint(25,150)):
             listAttr = randlist(0,1,cAttr)
             fLabel = bool(listAttr[ixAttrImportant])
             listInst.append(dtree.Instance(listAttr,fLabel))
@@ -262,8 +263,8 @@ class ConstructionTest(unittest.TestCase):
 
     @repeated
     def test_count_instance_attributes(self):
-        cLen = random.randint(3,10)
-        listInst = [dtree.Instance([0]*cLen)]*random.randint(5,10)
+        cLen = secrets.SystemRandom().randint(3,10)
+        listInst = [dtree.Instance([0]*cLen)]*secrets.SystemRandom().randint(5,10)
         cLenObserved = dtree.count_instance_attributes(listInst)
         self.assertEqual(cLen, cLenObserved)
         listInstJag = build_jagged_instances()
@@ -275,7 +276,7 @@ class ConstructionTest(unittest.TestCase):
     @repeated
     def test_build_tree(self):
         # test case size grows exponentially in this
-        cAttrs = random.randint(1,5)
+        cAttrs = secrets.SystemRandom().randint(1,5)
         listInst = []
         for ixAttr in xrange(cAttrs):
             cEach = 2**(cAttrs - ixAttr)
@@ -299,7 +300,7 @@ class ConstructionTest(unittest.TestCase):
     @repeated
     def test_build_tree_no_gain(self):
         listAttr = randlist(0,5,10)
-        listInst = [dtree.Instance(listAttr, randbool())]*random.randint(25,30)
+        listInst = [dtree.Instance(listAttr, randbool())]*secrets.SystemRandom().randint(25,30)
         dt = dtree.build_tree(listInst)
         fMajorityLabel = dtree.majority_label(listInst)
         self.assertTrue(dt.is_leaf())
@@ -308,7 +309,7 @@ class ConstructionTest(unittest.TestCase):
 def build_random_tree(cAttr,cValue):
     def down(listIxAttr):
         if listIxAttr:
-            ixAttr = random.choice(listIxAttr)
+            ixAttr = secrets.choice(listIxAttr)
             listIxAttrNext = list(listIxAttr)
             listIxAttrNext.remove(ixAttr)
             dt = dtree.DTree(ixAttr=ixAttr,fDefaultLabel=randbool())
@@ -321,7 +322,7 @@ def build_random_tree(cAttr,cValue):
 def build_random_instance_from_dt(dt,cAttr=None):
     listPath = []
     while dt.is_node():
-        cV,dtChild = random.choice(dt.dictChildren.items())
+        cV,dtChild = secrets.choice(dt.dictChildren.items())
         listPath.append((dt.ixAttr,cV))
         dt = dtChild
     assert dt.is_leaf()
@@ -329,9 +330,9 @@ def build_random_instance_from_dt(dt,cAttr=None):
     cMaxAttr = max([ixAttr for ixAttr,_ in listPath])
     dictPath = dict(listPath)
     if cAttr is None:
-        cAttr = cMaxAttr + random.randint(1,5)
+        cAttr = cMaxAttr + secrets.SystemRandom().randint(1,5)
     for ixAttr in xrange(cAttr):
-        cV = dictPath[ixAttr] if ixAttr in dictPath else random.randint(0,10)
+        cV = dictPath[ixAttr] if ixAttr in dictPath else secrets.SystemRandom().randint(0,10)
         listAttr.append(cV)
     return dtree.Instance(listAttr, dt.fLabel),listPath
         
@@ -398,20 +399,20 @@ class EvaluationTest(unittest.TestCase):
             listI = []
             dblSum = 0.0
             for _ in xrange(cLen):
-                dbl = math.exp(-random.random() - 0.1) * 10.0
+                dbl = math.exp(-secrets.SystemRandom().random() - 0.1) * 10.0
                 listI.append(dtree.Instance([],randbool(),dbl))
                 dblSum += dbl
             return listI,dblSum
-        listInstCorrect,dblCorrect = make_list(random.randint(0,10))
-        listInstIncorrect,dblIncorrect = make_list(random.randint(0,10))
+        listInstCorrect,dblCorrect = make_list(secrets.SystemRandom().randint(0,10))
+        listInstIncorrect,dblIncorrect = make_list(secrets.SystemRandom().randint(0,10))
         rslt = dtree.EvaluationResult(listInstCorrect, listInstIncorrect,None)
         dblC,dblI = dtree.weight_correct_incorrect(rslt)
         self.assertAlmostEqual(dblCorrect,dblC)
         self.assertAlmostEqual(dblIncorrect,dblI)
 
 def build_foldable_instances(lo=3,hi=10):
-    cFold = random.randint(lo,hi)
-    cInsts = random.randint(1,10)*cFold
+    cFold = secrets.SystemRandom().randint(lo,hi)
+    cInsts = secrets.SystemRandom().randint(1,10)*cFold
     return [dtree.Instance([i],randbool()) for i in range(cInsts)],cFold
 
 def build_folded_set(listInst):
@@ -461,7 +462,7 @@ class CrossValidationTest(unittest.TestCase):
         cValues = 4
         fxnGen = build_consistent_generator(cValues=cValues,
                                             fxnGenWeight=random.random)
-        cInst = random.randint(30,60)
+        cInst = secrets.SystemRandom().randint(30,60)
         listLeft = fxnGen(cInst)
         listRight = [dtree.Instance([cAttr+cValues+1
                                      for cAttr in inst.listAttrs],
@@ -517,8 +518,8 @@ class PruneTest(unittest.TestCase):
                     return
             down(dtRoot)
 
-        cAttr = random.randint(2,4)
-        cValue = random.randint(2,4)
+        cAttr = secrets.SystemRandom().randint(2,4)
+        cValue = secrets.SystemRandom().randint(2,4)
         dtBase = build_random_tree(cAttr,cValue)
         listPath = []
         listAttrs = []
@@ -527,7 +528,7 @@ class PruneTest(unittest.TestCase):
         set_labels(dtBase, not fTargetValue)
         dt = dtBase    
         while not dt.is_leaf():
-            ixValue = random.choice(dt.dictChildren.keys())
+            ixValue = secrets.choice(dt.dictChildren.keys())
             listPath.append(ixValue)
             listAttrs.append(dt.ixAttr)
             #print ixValue
@@ -545,7 +546,7 @@ class PruneTest(unittest.TestCase):
             dt.fDefaultLabel = fTargetValue
             listInst = []
             fxnEnd = lambda: randlist(0,cValue-1,cAttr - len(listPath))
-            for _ in xrange(random.randint(1,10)):
+            for _ in xrange(secrets.SystemRandom().randint(1,10)):
                 listValue = listPath + fxnEnd()
                 listInstAttr = [None for _ in xrange(cAttr)]
                 assert len(listValue) == cAttr
@@ -569,7 +570,7 @@ def is_stump(dt):
             return False
     return True
 
-fxnRandomWeight = lambda: random.random()*1000.0 + 0.1
+fxnRandomWeight = lambda: secrets.SystemRandom().random()*1000.0 + 0.1
 build_random_weight = build_instance_generator(fxnGenWeight=fxnRandomWeight)
 
 class BoostTest(unittest.TestCase):
@@ -597,22 +598,22 @@ class BoostTest(unittest.TestCase):
     def test_classifier_error(self):
         cInst = 100
         listInst = build_instance_generator()(cInst)
-        ix = random.randint(0,cInst)
+        ix = secrets.SystemRandom().randint(0,cInst)
         rslt = dtree.EvaluationResult(listInst[:ix], listInst[ix:], None)
         self.assertAlmostEqual(float(cInst-ix)/float(cInst),
                                dtree.classifier_error(rslt))
         
     @repeated
     def test_classifier_weight(self):
-        dblError = random.random()
+        dblError = secrets.SystemRandom().random()
         dblWeight = dtree.classifier_weight(dblError)
         dblFrac = math.exp(2.0*dblWeight)
         self.assertAlmostEqual(dblError, 1.0/(dblFrac + 1.0))
 
     @repeated
     def test_update_weight_unnormalized(self):
-        dblWeight = random.normalvariate(0.0,1.0)
-        dblClassifierWeight = random.normalvariate(0.0,10.0)
+        dblWeight = secrets.SystemRandom().normalvariate(0.0,1.0)
+        dblClassifierWeight = secrets.SystemRandom().normalvariate(0.0,10.0)
         fLabel = randbool()
         fClassifiedLabel = randbool()
         inst = dtree.Instance([],fLabel=fLabel,dblWeight=dblWeight)
@@ -634,7 +635,7 @@ class BoostTest(unittest.TestCase):
         listInst = fxnGen(cInst)
         for inst in listInst:
             inst.listAttrs[0] = int(inst.fLabel)
-        listInstIncorrect = random.sample(listInst,cInst/10)
+        listInstIncorrect = secrets.SystemRandom().sample(listInst,cInst/10)
         for inst in listInstIncorrect:
             inst.fLabel = not inst.listAttrs[0]
             inst.dblWeight = 0.1
@@ -649,7 +650,7 @@ class BoostTest(unittest.TestCase):
     def test_boost(self):
         listAttr = randlist(0,5,10)
         listInst = [dtree.Instance(listAttr, True) for _ in xrange(100)]
-        listInstFalse = random.sample(listInst,10)
+        listInstFalse = secrets.SystemRandom().sample(listInst,10)
         for inst in listInstFalse:
             inst.fLabel = False
         listInstCopy = [inst.copy() for inst in listInst]
@@ -659,7 +660,7 @@ class BoostTest(unittest.TestCase):
 
     @repeated
     def test_boost_maxrounds(self):
-        cRound = random.randint(2,25)
+        cRound = secrets.SystemRandom().randint(2,25)
         listInst = build_consistent_generator()(100)
         br = dtree.boost(listInst, cMaxRounds=cRound)
         self.assertTrue(len(br.listCfer) <= cRound)
